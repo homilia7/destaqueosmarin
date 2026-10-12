@@ -2,6 +2,12 @@
 
 Este documento es la **Memoria Protegida** del proyecto. Todas las funcionalidades registradas aquí se consideran inmutables y no deben ser revertidas ni borradas por asistentes de IA.
 
+## 🔗 VINCULACIÓN DEL PROYECTO
+- **Repositorio GitHub:** https://github.com/homilia7/destaqueosmarin
+- **Rama:** main
+- **URL Producción:** https://destaqueosmarin.pages.dev
+- **Commit:** 78d273a
+
 ---
 
 ## 🚀 [2026-10-12] - Inicialización y Versión 1.0 (Sistema Integral de Emergencias y Control)

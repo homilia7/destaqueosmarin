@@ -27,7 +27,7 @@ export const ServiceCards: React.FC<ServiceCardsProps> = ({ selectedService, onS
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {AVAILABLE_SERVICES.map((srv) => {
           const isSelected = selectedService === srv.id;
           return (

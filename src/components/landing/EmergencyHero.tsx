@@ -16,20 +16,20 @@ export const EmergencyHero: React.FC<EmergencyHeroProps> = ({ onScrollToLocation
             Respuesta Rápida de Emergencia en el GAM y Alrededores
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white m-0">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white m-0">
             Destaqueo de Tuberías y{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-300">
               Tanques Sépticos
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-xl font-normal leading-relaxed">
+          <p className="text-sm sm:text-lg text-slate-300 max-w-xl font-normal leading-relaxed">
             ¿Inodoro rebalzado, aguas negras atascadas o tanque séptico al límite? 
             Llegamos a su casa, empresa o restaurante con equipo especializado y camión cisterna.
           </p>
 
           {/* Quick guarantees */}
-          <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm text-slate-300 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-slate-300 pt-1">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Sondas rotativas (Cero rotura)</span>
@@ -52,17 +52,17 @@ export const EmergencyHero: React.FC<EmergencyHeroProps> = ({ onScrollToLocation
           <div className="flex flex-col sm:flex-row gap-3 pt-3">
             <button
               onClick={onScrollToLocation}
-              className="flex items-center justify-center gap-2.5 px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
             >
-              <Navigation className="w-5 h-5" />
-              Enviar mi Ubicación GPS (Tipo Uber)
+              <Navigation className="w-5 h-5 shrink-0" />
+              <span>Enviar mi Ubicación GPS (Tipo Uber)</span>
             </button>
             <a
               href="tel:61141421"
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm sm:text-base border border-slate-700 transition-colors"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm sm:text-base border border-slate-700 transition-colors"
             >
-              <Phone className="w-5 h-5 text-emerald-400" />
-              Llamar directo: 6114-1421
+              <Phone className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>Llamar directo: 6114-1421</span>
             </a>
           </div>
         </div>

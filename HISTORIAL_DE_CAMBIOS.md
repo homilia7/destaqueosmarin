@@ -48,3 +48,13 @@ Este documento es la **Memoria Protegida** del proyecto. Todas las funcionalidad
      - Cálculo de la tasa de conversión porcentual real (visitas vs contactos).
   4. **Filtro de Origen en CRM:** Posibilidad de ver "Todos los clientes" o "Solo clientes que llegaron por Google Ads".
 
+---
+
+## 🚀 [2026-10-12] - Versión 1.2 (Menú Desplegable Admin & Flujo Dispatch-First)
+- **Estado:** ✅ Completado y Verificado
+- **Módulos Implementados:**
+  1. **Menú de Administración Desplegable (Dropdown):** Navegación móvil y de escritorio con selector desplegable que muestra la sección activa, conteo de badges y cierre al hacer clic afuera.
+  2. **Flujo de Envío a Panel Primero:** La solicitud se registra y agenda primero en el radar de emergencias del camión con su código único antes de transferir a WhatsApp.
+  3. **Optimización 100% Responsiva:** Ajuste de tipografía base a 16px en inputs para evitar auto-zoom en iOS, tarjetas en grillas adaptables y botones táctiles accesibles.
+
+

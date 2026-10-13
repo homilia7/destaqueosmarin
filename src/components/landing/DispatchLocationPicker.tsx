@@ -6,6 +6,7 @@ import type { ServiceType } from '../../types/service';
 import type { EmergencyOrder } from '../../types/order';
 import { useOrders } from '../../hooks/useOrders';
 import { useAnalytics } from '../../hooks/useAnalytics';
+import { useSchedule } from '../../hooks/useSchedule';
 import { buildWhatsAppEmergencyMessage } from '../../utils/whatsapp';
 import { StepNamePhone } from './steps/StepNamePhone';
 import { StepLocation } from './steps/StepLocation';
@@ -18,14 +19,16 @@ interface DispatchLocationPickerProps {
 
 export const DispatchLocationPicker: React.FC<DispatchLocationPickerProps> = ({ selectedService }) => {
   const { location, loading, error, captureLiveGPS, updateManualAddress } = useGeolocation();
-  const { addOrder } = useOrders();
+  const { orders, addOrder } = useOrders();
+  const { timeSlots } = useSchedule(orders);
   const { trackEvent } = useAnalytics();
 
   // Pasos secuenciales: 1 = Nombre, 2 = Teléfono, 3 = Ubicación GPS, 4 = Urgencia y Enviar
   const [step, setStep] = useState<number>(1);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [urgency, setUrgency] = useState<'inmediato' | 'hoy_mismo'>('inmediato');
+  const [urgency, setUrgency] = useState<'inmediato' | 'hoy_mismo' | 'manana'>('inmediato');
+  const [selectedTime, setSelectedTime] = useState('');
   const [addressInput, setAddressInput] = useState('');
   const [landmarksInput, setLandmarksInput] = useState('');
   const [registeredOrder, setRegisteredOrder] = useState<EmergencyOrder | null>(null);
@@ -57,9 +60,11 @@ export const DispatchLocationPicker: React.FC<DispatchLocationPickerProps> = ({ 
       customerPhone: customerPhone.trim() || 'Sin número registrado',
       serviceType: selectedService,
       urgencyLevel: urgency,
+      scheduledTime: urgency === 'manana' ? selectedTime : undefined,
+      scheduledDate: urgency === 'manana' ? 'Para Mañana' : undefined,
       status: 'pendiente',
       source: 'google_ads',
-      notes: `Solicitud express web agendada`,
+      notes: urgency === 'manana' ? `Cita agendada para Mañana (${selectedTime})` : `Solicitud express web agendada`,
       location: {
         latitude: location.latitude,
         longitude: location.longitude,
@@ -76,6 +81,7 @@ export const DispatchLocationPicker: React.FC<DispatchLocationPickerProps> = ({ 
     const waUrl = buildWhatsAppEmergencyMessage({
       activeService,
       urgency,
+      scheduledTime: urgency === 'manana' ? selectedTime : undefined,
       customerName,
       customerPhone,
       finalAddress,
@@ -98,6 +104,8 @@ export const DispatchLocationPicker: React.FC<DispatchLocationPickerProps> = ({ 
     setStep(1);
     setCustomerName('');
     setCustomerPhone('');
+    setUrgency('inmediato');
+    setSelectedTime('');
     setAddressInput('');
     setLandmarksInput('');
   };
@@ -177,7 +185,13 @@ export const DispatchLocationPicker: React.FC<DispatchLocationPickerProps> = ({ 
                   customerPhone={customerPhone}
                   activeServiceTitle={activeService.title}
                   urgency={urgency}
-                  onSelectUrgency={setUrgency}
+                  selectedTime={selectedTime}
+                  timeSlots={timeSlots}
+                  onSelectUrgency={(u) => {
+                    setUrgency(u);
+                    if (u !== 'manana') setSelectedTime('');
+                  }}
+                  onSelectTime={setSelectedTime}
                   isSubmitting={isSubmitting}
                   onPrev={() => setStep(3)}
                   onSubmit={handleSendOrder}

@@ -60,10 +60,16 @@ export const LiveRadarOrders: React.FC<LiveRadarOrdersProps> = ({ onOpenReceipt 
                       className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                         ord.urgencyLevel === 'inmediato'
                           ? 'bg-red-100 text-red-700 animate-pulse'
+                          : ord.urgencyLevel === 'manana'
+                          ? 'bg-purple-100 text-purple-800 font-black'
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
-                      {ord.urgencyLevel === 'inmediato' ? '🚨 Urgencia Ya' : 'Hoy mismo'}
+                      {ord.urgencyLevel === 'inmediato'
+                        ? '🚨 Urgencia Ya'
+                        : ord.urgencyLevel === 'manana'
+                        ? `📅 Mañana ${ord.scheduledTime ? `• ${ord.scheduledTime}` : ''}`
+                        : 'Hoy mismo'}
                     </span>
                     <span className="text-xs font-semibold text-slate-600 capitalize">
                       {ord.serviceType.replace('_', ' ')}

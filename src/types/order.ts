@@ -20,7 +20,9 @@ export interface EmergencyOrder {
   customerName: string;
   customerPhone: string;
   serviceType: ServiceType;
-  urgencyLevel: 'inmediato' | 'hoy_mismo' | 'programado';
+  urgencyLevel: 'inmediato' | 'hoy_mismo' | 'programado' | 'manana';
+  scheduledTime?: string; // Ej. "09:00 AM"
+  scheduledDate?: string; // Ej. "Para Mañana (13 Oct)"
   location: LocationData;
   status: OrderStatus;
   source: LeadSource;

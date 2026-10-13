@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Radio, Wallet, Users, Compass, ArrowLeft, Truck, BarChart3, ChevronDown, Check } from 'lucide-react';
+import { Radio, Wallet, Users, Compass, ArrowLeft, Truck, BarChart3, ChevronDown, Check, Calendar } from 'lucide-react';
 
-export type AdminTab = 'radar' | 'caja' | 'crm' | 'analitica_ads' | 'google_ads';
+export type AdminTab = 'radar' | 'caja' | 'crm' | 'horario' | 'analitica_ads' | 'google_ads';
 
 interface AdminHeaderProps {
   activeTab: AdminTab;
@@ -23,6 +23,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const menuItems = [
     { id: 'radar' as AdminTab, label: 'Radar de Emergencias', icon: Radio, count: pendingOrdersCount, badgeColor: 'bg-red-600 text-white' },
+    { id: 'horario' as AdminTab, label: 'Horario & Agenda Laboral', icon: Calendar },
     { id: 'caja' as AdminTab, label: 'Caja SINPE & Efectivo', icon: Wallet },
     { id: 'crm' as AdminTab, label: 'CRM & Recordatorios', icon: Users, count: dueRemindersCount, badgeColor: 'bg-amber-500 text-slate-950' },
     { id: 'analitica_ads' as AdminTab, label: 'Métricas & Clics Ads', icon: BarChart3 },

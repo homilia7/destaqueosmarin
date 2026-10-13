@@ -14,6 +14,7 @@ import { ClientCRM } from './components/admin/ClientCRM';
 import { GoogleAdsGuide } from './components/admin/GoogleAdsGuide';
 import { AdsAnalyticsView } from './components/admin/AdsAnalyticsView';
 import { DigitalReceiptModal } from './components/admin/DigitalReceiptModal';
+import { ScheduleConfigPanel } from './components/admin/ScheduleConfigPanel';
 import { useOrders } from './hooks/useOrders';
 import { useClients } from './hooks/useClients';
 import { Shield } from 'lucide-react';
@@ -77,6 +78,7 @@ export function App() {
             {adminTab === 'radar' && (
               <LiveRadarOrders onOpenReceipt={(order) => setReceiptOrder(order)} />
             )}
+            {adminTab === 'horario' && <ScheduleConfigPanel orders={orders} />}
             {adminTab === 'caja' && <CashierPanel />}
             {adminTab === 'crm' && <ClientCRM />}
             {adminTab === 'analitica_ads' && <AdsAnalyticsView />}

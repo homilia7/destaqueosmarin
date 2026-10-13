@@ -4,7 +4,7 @@ import type { EmergencyOrder } from './types/order';
 import { EmergencyHeader } from './components/landing/EmergencyHeader';
 import { EmergencyHero } from './components/landing/EmergencyHero';
 import { ServiceCards } from './components/landing/ServiceCards';
-import { UberLocationPicker } from './components/landing/UberLocationPicker';
+import { DispatchLocationPicker } from './components/landing/DispatchLocationPicker';
 import { TrustSection } from './components/landing/TrustSection';
 import { AdminHeader } from './components/admin/AdminHeader';
 import type { AdminTab } from './components/admin/AdminHeader';
@@ -31,7 +31,7 @@ export function App() {
   const dueCount = reminders.filter((r) => r.isDue).length;
 
   const scrollToLocation = () => {
-    const el = document.getElementById('uber-location-section');
+    const el = document.getElementById('solicitud-servicio-section');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -46,7 +46,7 @@ export function App() {
               selectedService={selectedService}
               onSelectService={setSelectedService}
             />
-            <UberLocationPicker selectedService={selectedService} />
+            <DispatchLocationPicker selectedService={selectedService} />
           </main>
           <TrustSection />
 

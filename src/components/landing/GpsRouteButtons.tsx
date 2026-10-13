@@ -21,7 +21,7 @@ export const GpsRouteButtons: React.FC<GpsRouteButtonsProps> = ({ location }) =>
       </div>
       <p className="text-xs text-slate-700 font-medium">{location.addressText}</p>
 
-      {/* Botones de navegación estilo conductor de Uber */}
+      {/* Botones de navegación en tiempo real (Waze y Google Maps) */}
       <div className="flex flex-wrap gap-2 pt-1">
         <a
           href={location.wazeUrl}

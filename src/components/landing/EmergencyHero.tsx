@@ -55,7 +55,7 @@ export const EmergencyHero: React.FC<EmergencyHeroProps> = ({ onScrollToLocation
               className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
             >
               <Navigation className="w-5 h-5 shrink-0" />
-              <span>Enviar mi Ubicación GPS (Tipo Uber)</span>
+              <span>Enviar mi Ubicación GPS en Vivo</span>
             </button>
             <a
               href="tel:61141421"

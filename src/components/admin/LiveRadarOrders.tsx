@@ -120,7 +120,7 @@ export const LiveRadarOrders: React.FC<LiveRadarOrdersProps> = ({ onOpenReceipt 
                   </div>
                 </div>
 
-                {/* Action buttons (Uber Driver navigation) */}
+                {/* Action buttons (Navegación en ruta Waze y Google Maps) */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Waze button */}

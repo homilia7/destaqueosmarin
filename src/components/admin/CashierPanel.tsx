@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFinances } from '../../hooks/useFinances';
-import { Wallet, CheckCircle, ShieldAlert, Plus, Fuel, Trash2, ArrowUpRight } from 'lucide-react';
+import { Wallet, CheckCircle, ShieldAlert, Plus, Fuel, Trash2, ArrowUpRight, Download } from 'lucide-react';
 import type { PaymentType, ExpenseCategory } from '../../types/finance';
 
 export const CashierPanel: React.FC = () => {
@@ -17,6 +17,21 @@ export const CashierPanel: React.FC = () => {
   const [expCategory, setExpCategory] = useState<ExpenseCategory>('combustible');
   const [expAmount, setExpAmount] = useState('');
   const [expNotes, setExpNotes] = useState('');
+
+  const handleExportCashierCSV = () => {
+    const headers = 'ID,Fecha,Cliente,Telefono,Descripcion,MontoCRC,Metodo,ReferenciaSINPE,Verificado\n';
+    const rows = incomes.map((inc) =>
+      `"${inc.id}","${inc.date}","${inc.customerName}","${inc.customerPhone}","${inc.serviceDescription}",${inc.amount},"${inc.paymentType}","${inc.sinpeReference || ''}","${inc.sinpeVerified ? 'SI' : 'NO'}"`
+    ).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `cierre_caja_mauricio_marin_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAddIncome = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,8 +218,16 @@ export const CashierPanel: React.FC = () => {
 
       {/* Tabla de cobros con validador SINPE */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-700">
-          Movimientos Registrados Hoy
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <span className="font-bold text-xs text-slate-700">Movimientos Registrados Hoy</span>
+          <button
+            onClick={handleExportCashierCSV}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-lg border border-slate-300 transition-colors cursor-pointer"
+            title="Descargar cierre de caja en formato CSV para Excel"
+          >
+            <Download className="w-3 h-3 text-slate-600" />
+            <span>Exportar Cierre CSV</span>
+          </button>
         </div>
         <div className="divide-y divide-slate-100 text-xs">
           {incomes.map((inc) => (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useClients } from '../../hooks/useClients';
-import { BellRing, Phone, Send, Plus, Filter } from 'lucide-react';
+import { BellRing, Phone, Send, Plus, Filter, Download } from 'lucide-react';
 import type { ServiceType } from '../../types/service';
 import type { LeadSource } from '../../types/order';
 
@@ -19,6 +19,21 @@ export const ClientCRM: React.FC = () => {
   const [lastDate, setLastDate] = useState(new Date().toISOString().split('T')[0]);
 
   const dueCount = reminders.filter((r) => r.isDue).length;
+
+  const handleExportCSV = () => {
+    const headers = 'ID,Nombre,Telefono,Canton,Direccion,Servicio,Origen,UltimaVisita,TotalGastadoCRC\n';
+    const rows = clients.map((c) =>
+      `"${c.id}","${c.fullName}","${c.phone}","${c.cantonDistrict}","${c.exactAddress}","${c.serviceType}","${c.source}","${c.lastServiceDate}",${c.totalSpent}`
+    ).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `clientes_mauricio_marin_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleCreateClient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,13 +75,23 @@ export const ClientCRM: React.FC = () => {
             Recordatorios preventivos a los 6 y 12 meses para generar ingresos constantes.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{showAddForm ? 'Cerrar Formulario' : 'Nuevo Cliente'}</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 transition-colors cursor-pointer"
+            title="Descargar lista de clientes para Excel"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Exportar CSV</span>
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{showAddForm ? 'Cerrar Formulario' : 'Nuevo Cliente'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Formulario nuevo cliente si está activo */}

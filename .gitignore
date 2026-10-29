@@ -27,4 +27,5 @@ dist-ssr
 CLAVES.txt
 *.env
 *.env.*
+*.tsbuildinfo
 

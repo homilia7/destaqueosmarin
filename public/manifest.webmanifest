@@ -1,0 +1,25 @@
+{
+  "name": "Legacy Detección de Fugas",
+  "short_name": "Legacy Fugas",
+  "description": "Detección técnica no invasiva de fugas de agua, rastreo y limpieza de tuberías.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0A2540",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

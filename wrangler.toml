@@ -1,0 +1,14 @@
+name = "destaqueosmarin"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# Configuración de Base de Datos Cloudflare D1 Real
+[[d1_databases]]
+binding = "DB"
+database_name = "destaqueos-marin-db"
+database_id = "5914e6b5-aa34-40cc-9e8a-c16f73ac72b1"
+
+# Variables de Entorno
+[vars]
+ENVIRONMENT = "production"
+ADMIN_PIN = "1234"

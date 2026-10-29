@@ -1,96 +1,284 @@
-import { useState } from 'react';
-import type { ServiceType } from './types/service';
-import type { EmergencyOrder } from './types/order';
-import { EmergencyHeader } from './components/landing/EmergencyHeader';
-import { EmergencyHero } from './components/landing/EmergencyHero';
-import { ServiceCards } from './components/landing/ServiceCards';
-import { DispatchLocationPicker } from './components/landing/DispatchLocationPicker';
-import { TrustSection } from './components/landing/TrustSection';
-import { AdminHeader } from './components/admin/AdminHeader';
-import type { AdminTab } from './components/admin/AdminHeader';
-import { LiveRadarOrders } from './components/admin/LiveRadarOrders';
-import { CashierPanel } from './components/admin/CashierPanel';
-import { ClientCRM } from './components/admin/ClientCRM';
-import { GoogleAdsGuide } from './components/admin/GoogleAdsGuide';
-import { AdsAnalyticsView } from './components/admin/AdsAnalyticsView';
-import { DigitalReceiptModal } from './components/admin/DigitalReceiptModal';
-import { ScheduleConfigPanel } from './components/admin/ScheduleConfigPanel';
-import { useOrders } from './hooks/useOrders';
-import { useClients } from './hooks/useClients';
-import { Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Navbar } from './components/landing/Navbar';
+import { HeroSection } from './components/landing/HeroSection';
+import { ServicesSection } from './components/landing/ServicesSection';
+import { TechShowcase } from './components/landing/TechShowcase';
+import { TestimonialsSection } from './components/landing/TestimonialsSection';
+import { Footer } from './components/landing/Footer';
+import { AgendaPage } from './components/agenda/AgendaPage';
+import { ClientReviewPage } from './components/review/ClientReviewPage';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { AdminView } from './components/admin/AdminView';
+import { JobQuoteManager } from './components/quotes/JobQuoteManager';
+import { ClientQuoteView } from './components/quotes/ClientQuoteView';
+import { ProjectPresentationPage } from './components/project/ProjectPresentationPage';
+import { useAdminAuth } from './hooks/useAdminAuth';
+import { usePWA } from './hooks/usePWA';
+import { ServiceType } from './types/appointment';
+import { api } from './services/api';
 
 export function App() {
-  const [viewMode, setViewMode] = useState<'landing' | 'admin'>('landing');
-  const [selectedService, setSelectedService] = useState<ServiceType>('tanque_septico');
-  const [adminTab, setAdminTab] = useState<AdminTab>('radar');
-  const [receiptOrder, setReceiptOrder] = useState<EmergencyOrder | null>(null);
+  const [currentPath, setCurrentPath] = useState(() => {
+    const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+    return path || '/';
+  });
 
-  const { orders } = useOrders();
-  const { reminders } = useClients();
+  const [selectedService, setSelectedService] = useState<ServiceType>('Detección Especializada de Fugas');
+  
+  const { isAuthenticated, isLoading, error, login, logout } = useAdminAuth();
+  const { isInstallable, notificationsGranted, promptInstall, requestNotificationPermission } = usePWA();
 
-  const pendingCount = orders.filter((o) => o.status === 'pendiente' || o.status === 'en_camino').length;
-  const dueCount = reminders.filter((r) => r.isDue).length;
+  // Escuchar cambios de historial (botón atrás/adelante del navegador)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+      setCurrentPath(path || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-  const scrollToLocation = () => {
-    const el = document.getElementById('solicitud-servicio-section');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  // Redirigir hash #agendar/#agenda directamente a la ruta limpia /agenda
+  useEffect(() => {
+    if (window.location.hash === '#agendar' || window.location.hash === '#agenda') {
+      window.history.replaceState({}, '', '/agenda');
+      setCurrentPath('/agenda');
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
+  // Redirigir variantes /detec, /panel, /admin o ?view=admin a la ruta oficial /detec/panel preservando parámetros
+  useEffect(() => {
+    const raw = window.location.pathname.replace(/\/+$/, '');
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+
+    if (raw === '/detec' || raw === '/panel' || raw === '/admin') {
+      setCurrentPath('/detec/panel');
+      changed = true;
+    }
+
+    if (params.get('view') === 'admin') {
+      params.delete('view');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    }
+
+    // Atajos directos de URL a pestañas del panel administrativo
+    if (raw === '/horarios' || raw === '/horario') {
+      params.set('tab', 'schedule');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    } else if (raw === '/trafico' || raw === '/metricas') {
+      params.set('tab', 'traffic');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    } else if (raw === '/citas') {
+      params.set('tab', 'all');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    } else if (raw === '/ajustes') {
+      params.set('tab', 'settings');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    } else if (raw === '/resenas' || raw === '/reviews') {
+      params.set('tab', 'reviews');
+      setCurrentPath('/detec/panel');
+      changed = true;
+    }
+
+    if (changed) {
+      const search = params.toString() ? `?${params.toString()}` : '';
+      window.history.replaceState({}, '', `/detec/panel${search}`);
+    }
+  }, []);
+
+  // Detección y rastreo de enlaces cortos de redes sociales (/fb, /ig, /wa o ?ref=...)
+  useEffect(() => {
+    const raw = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const refParam = (params.get('ref') || params.get('source') || params.get('utm_source') || '').toLowerCase();
+
+    let detectedSource = '';
+    if (raw === '/fb' || refParam === 'fb' || refParam === 'facebook') {
+      detectedSource = 'fb';
+    } else if (raw === '/ig' || refParam === 'ig' || refParam === 'instagram') {
+      detectedSource = 'ig';
+    } else if (raw === '/wa' || refParam === 'wa' || refParam === 'whatsapp') {
+      detectedSource = 'wa';
+    } else if (raw === '/google' || raw === '/ads' || refParam === 'google' || refParam === 'gads' || refParam === 'cpc' || params.has('gclid') || (params.get('utm_medium') || '').toLowerCase() === 'cpc') {
+      detectedSource = 'google';
+    }
+
+    if (detectedSource) {
+      sessionStorage.setItem('marin_traffic_source', detectedSource);
+      api.trackTrafficEvent(detectedSource, 'visit', raw || '/');
+      window.history.replaceState({}, '', '/');
+      setCurrentPath('/');
+    } else if (!sessionStorage.getItem('marin_traffic_source') && !raw.startsWith('/detec') && !raw.startsWith('/cotizacion')) {
+      sessionStorage.setItem('marin_traffic_source', 'direct');
+      api.trackTrafficEvent('direct', 'visit', raw || '/');
+    }
+  }, []);
+
+  const navigateTo = (path: string) => {
+    if (path === '/agenda' || path.startsWith('/agenda')) {
+      const source = typeof window !== 'undefined' ? (sessionStorage.getItem('marin_traffic_source') || 'direct') : 'direct';
+      api.trackTrafficEvent(source, 'agenda_click', path);
+    }
+    window.history.pushState({}, '', path);
+    setCurrentPath(path.replace(/\/+$/, '').toLowerCase() || '/');
+    window.scrollTo(0, 0);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-      {viewMode === 'landing' ? (
-        <>
-          <EmergencyHeader onOpenAdmin={() => setViewMode('admin')} />
-          <main className="flex-1">
-            <EmergencyHero onScrollToLocation={scrollToLocation} />
-            <ServiceCards
-              selectedService={selectedService}
-              onSelectService={setSelectedService}
-            />
-            <DispatchLocationPicker selectedService={selectedService} />
-          </main>
-          <TrustSection />
+  const handleSelectService = (serviceTitle: string) => {
+    setSelectedService(serviceTitle as ServiceType);
+    navigateTo('/agenda');
+  };
 
-          {/* Floating Switcher Bar */}
-          <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('admin')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-950/90 hover:bg-slate-900 text-white rounded-full text-xs font-bold shadow-xl border border-slate-700 backdrop-blur-md transition-transform active:scale-95"
-            >
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Modo Técnico / Panel Mauricio</span>
-              {pendingCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              )}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="min-h-screen flex flex-col bg-slate-100">
-          <AdminHeader
-            activeTab={adminTab}
-            onSelectTab={setAdminTab}
-            onExitAdmin={() => setViewMode('landing')}
-            pendingOrdersCount={pendingCount}
-            dueRemindersCount={dueCount}
+  const normalizedPath = currentPath.toLowerCase();
+  const isAgendaRoute = normalizedPath === '/agenda' || normalizedPath === '/agendar';
+  const isAdminRoute = normalizedPath === '/detec/panel' || normalizedPath === '/detec' || normalizedPath === '/panel' || normalizedPath === '/admin';
+  const isReviewRoute = normalizedPath === '/calificar' || normalizedPath === '/review' || normalizedPath === '/valorar';
+  const isQuoteRoute = normalizedPath === '/cotizador' || normalizedPath === '/cotizar' || normalizedPath === '/presupuesto';
+  const isClientQuoteRoute = normalizedPath.startsWith('/cotizacion');
+  const isProjectRoute = normalizedPath === '/proyecto' || normalizedPath === '/sistema' || normalizedPath === '/propuesta';
+  const isTestimonialsRoute = normalizedPath === '/testimonios';
+
+  const clientQuoteId = (() => {
+    if (!isClientQuoteRoute) return '';
+    const parts = currentPath.split('/');
+    if (parts.length >= 3 && parts[1] === 'cotizacion') {
+      return decodeURIComponent(parts[2]);
+    }
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || '';
+  })();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white text-brand-dark selection:bg-brand-blue selection:text-white">
+      {isAdminRoute ? (
+        /* RUTA EXCLUSIVA INDEPENDIENTE: /detec/panel */
+        isAuthenticated ? (
+          <AdminView
+            onClose={() => navigateTo('/')}
+            onLogout={() => {
+              logout();
+              navigateTo('/');
+            }}
+            onInstallPWA={promptInstall}
+            onRequestNotifications={requestNotificationPermission}
+            isInstallable={isInstallable}
+            notificationsGranted={notificationsGranted}
           />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
-            {adminTab === 'radar' && (
-              <LiveRadarOrders onOpenReceipt={(order) => setReceiptOrder(order)} />
-            )}
-            {adminTab === 'horario' && <ScheduleConfigPanel orders={orders} />}
-            {adminTab === 'caja' && <CashierPanel />}
-            {adminTab === 'crm' && <ClientCRM />}
-            {adminTab === 'analitica_ads' && <AdsAnalyticsView />}
-            {adminTab === 'google_ads' && <GoogleAdsGuide />}
+        ) : (
+          <AdminLogin
+            onLogin={login}
+            onClose={() => navigateTo('/')}
+            isLoading={isLoading}
+            error={error}
+          />
+        )
+      ) : isAgendaRoute ? (
+        /* Vista Exclusiva de Agenda Sin Distracciones: /agenda */
+        <AgendaPage
+          onBackToHome={() => navigateTo('/')}
+          initialService={selectedService}
+          onOpenAdmin={() => navigateTo('/detec/panel')}
+        />
+      ) : isTestimonialsRoute ? (
+        /* Vista Exclusiva de Testimonios y Reseñas de Clientes: /testimonios */
+        <div className="min-h-screen flex flex-col bg-slate-50">
+          <Navbar
+            onOpenAdmin={() => navigateTo('/detec/panel')}
+            onNavigateAgenda={() => navigateTo('/agenda')}
+            onNavigateTestimonials={() => navigateTo('/testimonios')}
+          />
+          <main className="flex-grow py-8 px-4 sm:px-6 max-w-7xl mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between pb-2">
+              <button
+                type="button"
+                onClick={() => navigateTo('/')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-all shadow-xs cursor-pointer"
+              >
+                <span>← Volver al Inicio</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('/calificar')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 transition-all shadow-xs cursor-pointer"
+              >
+                <span>★ Dejar mi Reseña</span>
+              </button>
+            </div>
+            <TestimonialsSection />
           </main>
-          {receiptOrder && (
-            <DigitalReceiptModal
-              order={receiptOrder}
-              onClose={() => setReceiptOrder(null)}
-            />
-          )}
+          <Footer
+            onOpenAdmin={() => navigateTo('/detec/panel')}
+            onNavigateAgenda={() => navigateTo('/agenda')}
+            onNavigateTestimonials={() => navigateTo('/testimonios')}
+          />
         </div>
+      ) : isReviewRoute ? (
+        /* Vista Exclusiva para Calificación de Clientes: /calificar */
+        <ClientReviewPage onBackToHome={() => navigateTo('/')} />
+      ) : isProjectRoute ? (
+        /* Vista Estratégica del Sistema y Funcionalidades: /proyecto */
+        <ProjectPresentationPage
+          onBackToHome={() => navigateTo('/')}
+          onNavigateAgenda={() => navigateTo('/agenda')}
+          onOpenAdmin={() => navigateTo('/detec/panel')}
+        />
+      ) : isClientQuoteRoute ? (
+        /* Vista Oficial Dinámica de Cotización para el Cliente: /cotizacion/:id */
+        <ClientQuoteView
+          quoteId={clientQuoteId}
+          onBackToHome={() => navigateTo('/')}
+        />
+      ) : isQuoteRoute ? (
+        /* Vista Directa para Cotizaciones de Trabajos: /cotizador */
+        <div className="min-h-screen bg-[#F1F5F9] p-4 sm:p-6 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-4">
+            <div className="no-print flex items-center justify-between pb-2">
+              <button
+                type="button"
+                onClick={() => navigateTo('/')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
+              >
+                <span>← Volver a Inicio</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('/detec/panel')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-dark hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
+              >
+                <span>Panel Administrador</span>
+              </button>
+            </div>
+            <JobQuoteManager />
+          </div>
+        </div>
+      ) : (
+        /* Vista Principal Completa: / */
+        <>
+          <Navbar
+            onOpenAdmin={() => navigateTo('/detec/panel')}
+            onNavigateAgenda={() => navigateTo('/agenda')}
+            onNavigateTestimonials={() => navigateTo('/testimonios')}
+          />
+
+          <main className="flex-grow">
+            <HeroSection onNavigateAgenda={() => navigateTo('/agenda')} />
+            <ServicesSection onSelectService={handleSelectService} />
+            <TechShowcase onNavigateAgenda={() => navigateTo('/agenda')} />
+          </main>
+
+          <Footer
+            onOpenAdmin={() => navigateTo('/detec/panel')}
+            onNavigateAgenda={() => navigateTo('/agenda')}
+            onNavigateTestimonials={() => navigateTo('/testimonios')}
+          />
+        </>
       )}
     </div>
   );

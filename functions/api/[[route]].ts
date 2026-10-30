@@ -810,6 +810,7 @@ app.get('/quotes/:id', async (c) => {
 app.post('/quotes', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const id = body.id || 'cot_' + crypto.randomUUID().substring(0, 10);
+  const appointmentId = body.appointment_id || body.appointmentId || null;
   const quoteNumber = body.quote_number || body.quoteNumber || 'COT-2026';
   const date = body.date || new Date().toISOString().split('T')[0];
   const companyName = body.company_name || body.companyName || 'Destaqueos y Tanques Sépticos Mauricio Marín';
@@ -835,12 +836,13 @@ app.post('/quotes', async (c) => {
     try {
       await c.env.DB.prepare(`
         INSERT INTO quotes (
-          id, quote_number, date, company_name, client_name, client_location, client_phone,
+          id, appointment_id, quote_number, date, company_name, client_name, client_location, client_phone,
           work_reference, scope_items, labor_cost, materials_cost, materials_detail,
           apply_iva, delivery_time, total_amount, file_name, responsible_name, responsible_phone, status
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
+          appointment_id = COALESCE(excluded.appointment_id, quotes.appointment_id),
           quote_number = excluded.quote_number,
           date = excluded.date,
           company_name = excluded.company_name,
@@ -861,7 +863,7 @@ app.post('/quotes', async (c) => {
           status = excluded.status,
           updated_at = CURRENT_TIMESTAMP
       `).bind(
-        id, quoteNumber, date, companyName, clientName, clientLocation, clientPhone,
+        id, appointmentId, quoteNumber, date, companyName, clientName, clientLocation, clientPhone,
         workReference, scopeItems, laborCost, materialsCost, materialsDetail,
         applyIva, deliveryTime, totalAmount, fileName, responsibleName, responsiblePhone, status
       ).run();

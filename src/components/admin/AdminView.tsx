@@ -13,6 +13,8 @@ import { TrafficAnalytics } from './TrafficAnalytics';
 import { AnimatedEagleLogo } from '../common/AnimatedEagleLogo';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useReviews } from '../../hooks/useReviews';
+import { useQuotes } from '../../hooks/useQuotes';
+import { JobQuote } from '../../types/quote';
 import { api } from '../../services/api';
 import { TimeSlot, AvailabilityResponse } from '../../types/appointment';
 import { 
@@ -80,6 +82,71 @@ export const AdminView: React.FC<AdminViewProps> = ({
     dismissAlert: dismissReviewAlert,
     removeReview
   } = useReviews(true);
+
+  const { quotes, findQuoteForAppointment } = useQuotes(true);
+  const [quoteToEdit, setQuoteToEdit] = useState<JobQuote | null>(null);
+
+  const handleCreateQuoteForAppointment = (appointment: any) => {
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const quoteNumber = `COT-${new Date().getFullYear()}-${randomSuffix}`;
+    const serviceAmount = appointment.amount_collected ? Number(appointment.amount_collected) : 45000;
+
+    const newQuote: JobQuote = {
+      id: `quote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      appointmentId: appointment.id,
+      quoteNumber,
+      date: appointment.appointment_date || getTodayDateString(),
+      companyName: 'Destaqueos y Tanques Sépticos Mauricio Marín',
+      companyLogoUrl: '/camion-destaqueos.png',
+      customLogoUrl: null,
+      clientName: appointment.client_name || '',
+      clientLocation: appointment.client_address || '',
+      clientPhone: appointment.client_phone || '',
+      workReference: appointment.service_type || 'Limpieza y Destaqueo',
+      scopeItems: [
+        { id: '1', text: `Servicio especializado: ${appointment.service_type}` },
+        ...(appointment.problem_description
+          ? [{ id: '2', text: appointment.problem_description }]
+          : [{ id: '2', text: 'Vaciado y succión con camión cisterna / sondeo electromecánico.' }]),
+        { id: '3', text: 'Pruebas de evacuación y verificación de flujo continuo.' }
+      ],
+      laborCost: serviceAmount,
+      materialsCost: 0,
+      materialsDetail: 'Equipo especializado, mangueras de alto vacío y personal técnico calificado incluido.',
+      applyIVA: false,
+      ivaRate: 0.13,
+      deliveryTime: '1 día hábil',
+      paymentTerms: '100% contra entrega y satisfacción al cliente',
+      checkpoints: {
+        paymentOnDelivery: true,
+        satisfactionGuarantee: true,
+        certifiedMaterials: true,
+        noHiddenCosts: true
+      },
+      responsibleName: 'Mauricio Marín',
+      responsibleTitle: 'Especialista en Tanques Sépticos y Destaqueos',
+      responsiblePhone: '6114-1421',
+      instagramUrl: '',
+      whatsappUrl: 'https://wa.me/50661141421',
+      emailContact: 'mauriciomarin@gmail.com',
+      websiteUrl: 'https://destaqueosmarin.pages.dev',
+      createdAt: new Date().toISOString(),
+      status: 'por_enviar'
+    };
+
+    setQuoteToEdit(newQuote);
+    setActiveTab('quotes');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewOrEditQuote = (quoteId: string) => {
+    const found = quotes.find((q) => q.id === quoteId);
+    if (found && found.quoteData) {
+      setQuoteToEdit(found.quoteData);
+      setActiveTab('quotes');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const [activeTab, setActiveTabState] = useState<AdminTab>(getInitialAdminTab);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -514,6 +581,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     onUpdatePayment={updatePayment}
                     onOpenLightbox={(photos, index) => setLightboxState({ photos, index })}
                     isHighlighted={highlightedId === app.id}
+                    existingQuote={findQuoteForAppointment(app)}
+                    onCreateQuote={handleCreateQuoteForAppointment}
+                    onViewQuote={handleViewOrEditQuote}
                   />
                 ))}
               </div>
@@ -868,6 +938,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     onUpdatePayment={updatePayment}
                     onOpenLightbox={(photos, index) => setLightboxState({ photos, index })}
                     isHighlighted={highlightedId === app.id}
+                    existingQuote={findQuoteForAppointment(app)}
+                    onCreateQuote={handleCreateQuoteForAppointment}
+                    onViewQuote={handleViewOrEditQuote}
                   />
                 ))}
               </div>
@@ -878,7 +951,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
         {/* TAB 3: COTIZADOR DE TRABAJOS EN LÍNEA */}
         {activeTab === 'quotes' && (
           <div className="w-full">
-            <JobQuoteManager />
+            <JobQuoteManager 
+              quoteToEdit={quoteToEdit}
+              onClearQuoteToEdit={() => setQuoteToEdit(null)}
+            />
           </div>
         )}
 

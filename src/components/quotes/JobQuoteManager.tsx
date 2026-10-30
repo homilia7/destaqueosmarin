@@ -44,7 +44,15 @@ const HISTORY_STORAGE_KEY = 'destaqueos_saved_quotes_history';
 const DEFAULT_LOGO = '/camion-destaqueos.png';
 const SHIELD_LOGO = '/camion-destaqueos.png';
 
-export const JobQuoteManager: React.FC = () => {
+interface JobQuoteManagerProps {
+  quoteToEdit?: JobQuote | null;
+  onClearQuoteToEdit?: () => void;
+}
+
+export const JobQuoteManager: React.FC<JobQuoteManagerProps> = ({
+  quoteToEdit,
+  onClearQuoteToEdit
+}) => {
   const [activeMobileView, setActiveMobileView] = useState<'editor' | 'preview'>('editor');
   const [copied, setCopied] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
@@ -270,6 +278,21 @@ export const JobQuoteManager: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Cargar cotización cuando se pasa desde la tarjeta de una cita
+  useEffect(() => {
+    if (quoteToEdit) {
+      setQuote(quoteToEdit);
+      setEditingQuoteId(quoteToEdit.id);
+      setActiveMobileView('editor');
+      setTimeout(() => {
+        const el = document.getElementById('company-details-section') || document.getElementById('printable-quote-sheet');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [quoteToEdit]);
+
   // Auto-guardado de borrador activo en localStorage
   useEffect(() => {
     try {
@@ -384,6 +407,7 @@ export const JobQuoteManager: React.FC = () => {
     try {
       await api.saveQuote({
         id: activeQuote.id,
+        appointment_id: activeQuote.appointmentId || quote.appointmentId || null,
         quote_number: activeQuote.quoteNumber,
         date: activeQuote.date,
         company_name: activeQuote.companyName,
@@ -404,6 +428,7 @@ export const JobQuoteManager: React.FC = () => {
         responsible_phone: activeQuote.responsiblePhone
       });
       await syncCloudQuotes();
+      window.dispatchEvent(new CustomEvent('destaqueos_quotes_updated'));
     } catch (err) {
       console.warn('Cloud save error:', err);
     } finally {
@@ -449,6 +474,7 @@ export const JobQuoteManager: React.FC = () => {
     const existing = savedHistory.find((item) => item.id === targetId);
     const entry: SavedQuoteEntry = {
       id: targetId,
+      appointmentId: quote.appointmentId,
       fileName: finalName,
       savedAt: now.toISOString(),
       totalAmount: totalGeneral,
@@ -468,6 +494,7 @@ export const JobQuoteManager: React.FC = () => {
     try {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {}
+    window.dispatchEvent(new CustomEvent('destaqueos_quotes_updated', { detail: quoteToSave }));
 
     // Mantener sincronizado el editor con el ID asignado
     setQuote(quoteToSave);
@@ -730,6 +757,7 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
     const entryStatus = existing?.status || 'por_enviar';
     const entry: SavedQuoteEntry = {
       id: targetId,
+      appointmentId: quote.appointmentId,
       fileName: finalName,
       savedAt: now.toISOString(),
       totalAmount: totalGeneral,
@@ -749,6 +777,7 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
     try {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {}
+    window.dispatchEvent(new CustomEvent('destaqueos_quotes_updated', { detail: quoteToSave }));
 
     setQuote(quoteToSave);
     setEditingQuoteId(targetId);
@@ -1052,6 +1081,34 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
           </button>
         </div>
       </div>
+
+      {/* AVISO DE COTIZACIÓN ASOCIADA A CITA DE CLIENTE */}
+      {quote.appointmentId && (
+        <div className="no-print bg-emerald-50 border-2 border-emerald-300 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2.5 text-emerald-950 font-bold">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+              <Sparkles className="w-3 h-3" />
+              Para Cliente
+            </span>
+            <span>
+              Cotización personalizada para: <strong>{quote.clientName || 'Cliente Particular'}</strong> {quote.clientPhone ? `• Tel: ${quote.clientPhone}` : ''} {quote.workReference ? `• ${quote.workReference}` : ''}
+            </span>
+          </div>
+          {onClearQuoteToEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                onClearQuoteToEdit();
+                handleResetQuote(true);
+              }}
+              className="px-3 py-1 rounded-xl bg-white hover:bg-emerald-100 text-emerald-900 font-black border border-emerald-300 text-[11px] flex items-center gap-1 cursor-pointer shadow-2xs shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Cotización en Blanco</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* AVISO DE COTIZACIÓN EN EDICIÓN */}
       {editingQuoteId && (
@@ -2244,12 +2301,12 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
             className="print-area bg-white rounded-3xl p-5 sm:p-7 print:p-3 border border-slate-200/90 shadow-xl space-y-3.5 print:space-y-2 text-brand-dark font-sans relative overflow-hidden"
           >
             {/* Barra Decorativa Superior */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#67141d] via-[#8B1826] to-[#0066CC] shadow-xs z-10" />
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-[#FF5E0E] shadow-xs z-10" />
 
             {/* Difuminado Profesional en la Cabecera */}
-            <div className="absolute top-0 right-0 w-80 h-32 bg-gradient-to-bl from-[#0066CC]/10 via-[#67141d]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute top-0 left-0 w-64 h-32 bg-gradient-to-br from-[#67141d]/15 to-transparent rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#67141d]/[0.03] to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-80 h-32 bg-gradient-to-bl from-emerald-500/10 via-teal-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 left-0 w-64 h-32 bg-gradient-to-br from-emerald-600/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-emerald-600/[0.03] to-transparent pointer-events-none" />
 
             {/* ENCABEZADO OFICIAL DE LA COTIZACIÓN */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-2.5 pt-1 relative z-10">

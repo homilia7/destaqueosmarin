@@ -5,6 +5,7 @@ export interface QuoteItem {
 
 export interface JobQuote {
   id: string;
+  appointmentId?: string;
   quoteNumber: string;
   date: string;
   companyName: string;
@@ -41,6 +42,7 @@ export interface JobQuote {
 
 export interface SavedQuoteEntry {
   id: string;
+  appointmentId?: string;
   fileName: string;
   savedAt: string;
   totalAmount: number;

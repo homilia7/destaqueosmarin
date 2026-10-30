@@ -87,20 +87,30 @@ CREATE INDEX IF NOT EXISTS idx_reviews_phone ON reviews (client_phone);
 -- 6. Cotizaciones Formales
 CREATE TABLE IF NOT EXISTS quotes (
   id TEXT PRIMARY KEY,
+  appointment_id TEXT,
+  quote_number TEXT NOT NULL,
+  date TEXT NOT NULL,
+  company_name TEXT NOT NULL,
   client_name TEXT NOT NULL,
+  client_location TEXT,
   client_phone TEXT NOT NULL,
-  client_address TEXT,
-  service_type TEXT NOT NULL,
-  total_amount REAL NOT NULL,
-  deposit_amount REAL NOT NULL DEFAULT 0,
-  balance_amount REAL NOT NULL DEFAULT 0,
-  line_items_json TEXT NOT NULL,
-  notes TEXT,
-  warranty_days INTEGER NOT NULL DEFAULT 30,
-  status TEXT NOT NULL DEFAULT 'pending',
-  view_count INTEGER NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  work_reference TEXT,
+  scope_items TEXT,
+  labor_cost REAL DEFAULT 0,
+  materials_cost REAL DEFAULT 0,
+  materials_detail TEXT,
+  apply_iva INTEGER DEFAULT 0,
+  delivery_time TEXT,
+  total_amount REAL DEFAULT 0,
+  file_name TEXT,
+  responsible_name TEXT,
+  responsible_phone TEXT,
+  status TEXT DEFAULT 'por_enviar',
+  is_downloaded INTEGER DEFAULT 0,
+  downloaded_at DATETIME,
+  view_count INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 7. Métricas y Eventos de Tráfico
@@ -121,3 +131,4 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   keys_json TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+

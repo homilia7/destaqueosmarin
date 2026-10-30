@@ -231,9 +231,9 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
           <button
             type="button"
             onClick={() => onUpdateStatus(appointment.id, 'completed')}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-md shadow-orange-500/25 active:scale-98 transition-all cursor-pointer"
           >
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
+            <CheckCircle className="w-4 h-4 text-white" />
             <span>Marcar Trabajo como Finalizado</span>
           </button>
         )}

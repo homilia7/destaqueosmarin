@@ -103,8 +103,13 @@ export function useAppointments(isPollingActive = true) {
     }
   };
 
-  const updatePayment = async (id: string, amount: number, payment_method: string) => {
-    const updated = await api.updateAppointmentPayment(id, amount, payment_method);
+  const updatePayment = async (
+    id: string, 
+    amount: number, 
+    payment_method: string, 
+    payment_breakdown?: any[]
+  ) => {
+    const updated = await api.updateAppointmentPayment(id, amount, payment_method, payment_breakdown);
     if (updated) {
       setAppointments((prev) => prev.map((a) => (a.id === id ? updated : a)));
     }

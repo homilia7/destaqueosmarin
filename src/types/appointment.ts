@@ -17,7 +17,26 @@ export const DEFAULT_SERVICES: ServiceItem[] = [
 ];
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
-export type PaymentMethod = 'sinpe' | 'card' | 'cash';
+export type PaymentMethod = 'sinpe' | 'card' | 'cash' | 'transfer';
+
+export interface PaymentItem {
+  id?: string;
+  method: PaymentMethod;
+  amount: number;
+  note?: string;
+}
+
+export type ExpenseCategory = 'gasolina' | 'alimentacion' | 'materiales' | 'mantenimiento' | 'otro';
+
+export interface Expense {
+  id: string;
+  date: string; // YYYY-MM-DD
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  receipt_url?: string | null;
+  created_at?: string;
+}
 
 export interface Appointment {
   id: string;
@@ -35,7 +54,8 @@ export interface Appointment {
   photo_keys: string[]; // R2 keys or local base64 / blob URLs
   photos_deleted: number; // 0 or 1
   amount_collected?: number; // Monto cobrado en Colones
-  payment_method?: PaymentMethod | string; // 'sinpe' | 'card' | 'cash'
+  payment_method?: PaymentMethod | string; // 'sinpe' | 'card' | 'cash' | 'transfer'
+  payment_breakdown?: PaymentItem[];
   status: AppointmentStatus;
   created_at: string;
 }

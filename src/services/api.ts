@@ -383,25 +383,32 @@ class ApiService {
     return updatedApp;
   }
 
-  async updateAppointmentPayment(id: string, amount: number, payment_method: string): Promise<Appointment | null> {
+  async updateAppointmentPayment(
+    id: string, 
+    amount: number, 
+    payment_method: string, 
+    payment_breakdown?: any[]
+  ): Promise<Appointment | null> {
     try {
-      if (!this.useLocalFallback) {
-        const res = await fetch(`/api/appointments/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount_collected: amount, payment_method })
-        });
-        if (res.ok) return await res.json();
-      }
-    } catch {
-      this.useLocalFallback = true;
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          amount_collected: amount, 
+          payment_method,
+          payment_breakdown 
+        })
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Network error updating payment:', e);
     }
 
     const current = this.getStored<Appointment[]>(STORAGE_KEYS.APPOINTMENTS, []);
     let updatedApp: Appointment | null = null;
     const updated = current.map((app) => {
       if (app.id === id) {
-        updatedApp = { ...app, amount_collected: amount, payment_method };
+        updatedApp = { ...app, amount_collected: amount, payment_method, payment_breakdown };
         return updatedApp;
       }
       return app;
@@ -673,28 +680,33 @@ class ApiService {
   // ----------------------------------------------------
   async getQuotes(): Promise<any[]> {
     try {
-      if (!this.useLocalFallback) {
-        const res = await fetch('/api/quotes');
-        if (res.ok) {
-          return await res.json();
+      const res = await fetch(`/api/quotes?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (res.ok) {
+        const remote = await res.json();
+        if (Array.isArray(remote)) {
+          return remote;
         }
       }
-    } catch {
-      this.useLocalFallback = true;
+    } catch (e) {
+      console.warn('Network error fetching quotes:', e);
     }
-    return this.getStored<any[]>('destaqueos_saved_quotes_history', []);
+    return [];
   }
 
   async getQuoteById(id: string): Promise<any | null> {
     try {
-      if (!this.useLocalFallback) {
-        const res = await fetch(`/api/quotes/${id}`);
-        if (res.ok) {
-          return await res.json();
-        }
+      const res = await fetch(`/api/quotes/${id}`);
+      if (res.ok) {
+        return await res.json();
       }
-    } catch {
-      this.useLocalFallback = true;
+    } catch (e) {
+      console.warn('Network error fetching quote by id:', e);
     }
     const local = this.getStored<any[]>('destaqueos_saved_quotes_history', []);
     const found = local.find((q: any) => q.id === id || q.quoteData?.id === id);
@@ -702,25 +714,28 @@ class ApiService {
   }
 
   async saveQuote(quote: any): Promise<any> {
+    try {
+      const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quote)
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        const local = this.getStored<any[]>('destaqueos_saved_quotes_history', []);
+        const filtered = local.filter((q: any) => q.id !== quote.id && q.quoteData?.id !== quote.id);
+        filtered.unshift({ ...quote, ...saved });
+        this.setStored('destaqueos_saved_quotes_history', filtered);
+        return saved;
+      }
+    } catch (e) {
+      console.warn('Network error saving quote:', e);
+    }
+
     const local = this.getStored<any[]>('destaqueos_saved_quotes_history', []);
     const filtered = local.filter((q: any) => q.id !== quote.id && q.quoteData?.id !== quote.id);
     filtered.unshift(quote);
     this.setStored('destaqueos_saved_quotes_history', filtered);
-
-    try {
-      if (!this.useLocalFallback) {
-        const res = await fetch('/api/quotes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quote)
-        });
-        if (res.ok) {
-          return await res.json();
-        }
-      }
-    } catch {
-      this.useLocalFallback = true;
-    }
     return { id: quote.id, share_url: `/cotizacion/${quote.id}` };
   }
 
@@ -752,30 +767,88 @@ class ApiService {
     this.setStored('destaqueos_saved_quotes_history', updated);
 
     try {
-      if (!this.useLocalFallback) {
-        const res = await fetch(`/api/quotes/${id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status })
-        });
-        if (res.ok) return true;
-      }
-    } catch {
-      this.useLocalFallback = true;
+      const res = await fetch(`/api/quotes/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) return true;
+    } catch (e) {
+      console.warn('Network error updating quote status:', e);
     }
     return true;
   }
 
   async deleteQuote(id: string): Promise<boolean> {
+    const local = this.getStored<any[]>('destaqueos_saved_quotes_history', []);
+    const filtered = local.filter((q: any) => q.id !== id && q.quoteData?.id !== id);
+    this.setStored('destaqueos_saved_quotes_history', filtered);
+
     try {
-      if (!this.useLocalFallback) {
-        const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
-        if (res.ok) return true;
-      }
-    } catch {
-      this.useLocalFallback = true;
+      const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+      if (res.ok) return true;
+    } catch (e) {
+      console.warn('Network error deleting quote:', e);
     }
     return true;
+  }
+
+  // ----------------------------------------------------
+  // GASTOS OPERATIVOS (EXPENSES)
+  // ----------------------------------------------------
+  async getExpenses(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/expenses');
+      if (res.ok) {
+        const remote = await res.json();
+        if (Array.isArray(remote)) {
+          this.setStored('destaqueos_expenses_history', remote);
+          return remote;
+        }
+      }
+    } catch (e) {
+      console.warn('Network error fetching expenses:', e);
+    }
+    return this.getStored<any[]>('destaqueos_expenses_history', []);
+  }
+
+  async saveExpense(expense: any): Promise<any> {
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(expense)
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        const local = this.getStored<any[]>('destaqueos_expenses_history', []);
+        const filtered = local.filter((e: any) => e.id !== expense.id);
+        filtered.unshift(saved);
+        this.setStored('destaqueos_expenses_history', filtered);
+        return saved;
+      }
+    } catch (e) {
+      console.warn('Network error saving expense:', e);
+    }
+
+    const local = this.getStored<any[]>('destaqueos_expenses_history', []);
+    const filtered = local.filter((e: any) => e.id !== expense.id);
+    filtered.unshift(expense);
+    this.setStored('destaqueos_expenses_history', filtered);
+    return expense;
+  }
+
+  async deleteExpense(id: string): Promise<boolean> {
+    const local = this.getStored<any[]>('destaqueos_expenses_history', []);
+    const filtered = local.filter((e: any) => e.id !== id);
+    this.setStored('destaqueos_expenses_history', filtered);
+
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return true;
+    }
   }
 
   // ----------------------------------------------------

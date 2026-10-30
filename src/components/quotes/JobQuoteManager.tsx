@@ -67,17 +67,21 @@ export const JobQuoteManager: React.FC<JobQuoteManagerProps> = ({
   const [isSavingLater, setIsSavingLater] = useState(false);
   const [savedLaterFeedback, setSavedLaterFeedback] = useState(false);
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [pendingRedirectUrl, setPendingRedirectUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedLaterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Limpieza de temporizadores de auto-scroll y mensajes de 10s al desmontar
+  // Limpieza de temporizadores de auto-scroll y mensajes al desmontar
   useEffect(() => {
     return () => {
       if (autoScrollTimerRef.current) clearTimeout(autoScrollTimerRef.current);
       if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current);
       if (savedLaterTimerRef.current) clearTimeout(savedLaterTimerRef.current);
+      if (redirectTimerRef.current) clearInterval(redirectTimerRef.current);
     };
   }, []);
 
@@ -253,15 +257,15 @@ export const JobQuoteManager: React.FC<JobQuoteManagerProps> = ({
           }
         }));
 
-        setSavedHistory((prev) => {
-          const remoteIds = new Set(mapped.map((m) => m.id));
-          const localOnly = prev.filter((p) => !remoteIds.has(p.id));
-          const merged = [...mapped, ...localOnly];
-          try {
-            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(merged));
-          } catch (e) {}
-          return merged;
-        });
+        setSavedHistory(mapped);
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(mapped));
+        } catch (e) {}
+      } else if (Array.isArray(remoteQuotes) && remoteQuotes.length === 0) {
+        setSavedHistory([]);
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([]));
+        } catch (e) {}
       }
     } catch (e) {
       console.warn('Error sincronizando cotizaciones:', e);
@@ -274,8 +278,17 @@ export const JobQuoteManager: React.FC<JobQuoteManagerProps> = ({
       if (!document.hidden) {
         syncCloudQuotes();
       }
-    }, 20000);
-    return () => clearInterval(interval);
+    }, 15000);
+
+    const handleQuotesUpdated = () => {
+      syncCloudQuotes();
+    };
+    window.addEventListener('destaqueos_quotes_updated', handleQuotesUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('destaqueos_quotes_updated', handleQuotesUpdated);
+    };
   }, []);
 
   // Cargar cotización cuando se pasa desde la tarjeta de una cita
@@ -434,6 +447,107 @@ export const JobQuoteManager: React.FC<JobQuoteManagerProps> = ({
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // Guardar y enviar directamente por WhatsApp con cuenta regresiva de 3 segundos
+  const handleSaveAndSendQuote = async () => {
+    setIsSavingLater(true);
+    try {
+      const now = new Date();
+      let targetId = quote.id;
+      let targetQuoteNumber = quote.quoteNumber;
+
+      const existingIndex = savedHistory.findIndex((item) => item.id === targetId);
+      const isExplicitlyEditing = editingQuoteId === targetId;
+      const clientNameTrimmed = quote.clientName.trim();
+      const existingClientName = existingIndex !== -1 ? savedHistory[existingIndex].clientName.trim() : '';
+      const clientChanged = existingIndex !== -1 && clientNameTrimmed !== existingClientName;
+
+      // Generar nuevo ID independiente para garantizar que cada nueva cotización se registre sin sobreescribir
+      if (existingIndex !== -1 && (!isExplicitlyEditing || clientChanged)) {
+        targetId = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        targetQuoteNumber = generateQuoteNumber();
+      }
+
+      const clientClean = (clientNameTrimmed || 'Cliente').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '-');
+      const finalName = `Cotizacion-${clientClean}-${targetQuoteNumber}`;
+
+      const quoteToSave: JobQuote = {
+        ...quote,
+        id: targetId,
+        quoteNumber: targetQuoteNumber,
+        status: 'enviada'
+      };
+
+      // 1. Guardar de forma optimista inmediata en LocalStorage y Estado
+      const existing = savedHistory.find((item) => item.id === targetId);
+      const entry: SavedQuoteEntry = {
+        id: targetId,
+        appointmentId: quote.appointmentId,
+        fileName: finalName,
+        savedAt: now.toISOString(),
+        totalAmount: totalGeneral,
+        clientName: quote.clientName || 'Cliente Particular',
+        workReference: quote.workReference || 'Trabajo Técnico',
+        status: 'enviada',
+        sentAt: now.toISOString(),
+        viewCount: existing?.viewCount || 0,
+        isDownloaded: existing?.isDownloaded || false,
+        downloadedAt: existing?.downloadedAt || null,
+        shareUrl: `${window.location.origin}/cotizacion/${targetId}`,
+        quoteData: quoteToSave
+      };
+
+      const updated = [entry, ...savedHistory.filter((item) => item.id !== targetId)];
+      setSavedHistory(updated);
+      try {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+
+      // Sincronizar en la nube D1
+      await saveToCloud(finalName, 'enviada', quoteToSave);
+      window.dispatchEvent(new CustomEvent('destaqueos_quotes_updated', { detail: quoteToSave }));
+
+      const msg = generateWhatsAppMessage(quoteToSave);
+      const text = encodeURIComponent(msg);
+      const phone = quoteToSave.clientPhone ? quoteToSave.clientPhone.replace(/\D/g, '') : '';
+      const waUrl = phone.length >= 8 
+        ? `https://wa.me/506${phone.slice(-8)}?text=${text}`
+        : `https://wa.me/?text=${text}`;
+
+      setPendingRedirectUrl(waUrl);
+      setRedirectCountdown(3);
+
+      if (redirectTimerRef.current) clearInterval(redirectTimerRef.current);
+      let count = 3;
+      redirectTimerRef.current = setInterval(() => {
+        count -= 1;
+        if (count <= 0) {
+          if (redirectTimerRef.current) clearInterval(redirectTimerRef.current);
+          setRedirectCountdown(null);
+          window.open(waUrl, '_blank');
+          setEditingQuoteId(null);
+          setQuote(getInitialQuote());
+        } else {
+          setRedirectCountdown(count);
+        }
+      }, 1000);
+
+    } catch (err) {
+      console.warn('Error en Guardar y enviar:', err);
+    } finally {
+      setIsSavingLater(false);
+    }
+  };
+
+  const handleOpenWhatsAppImmediately = () => {
+    if (redirectTimerRef.current) clearInterval(redirectTimerRef.current);
+    if (pendingRedirectUrl) {
+      window.open(pendingRedirectUrl, '_blank');
+    }
+    setRedirectCountdown(null);
+    setEditingQuoteId(null);
+    setQuote(getInitialQuote());
   };
 
   // Guardar específicamente para Enviar Después (en "Cotizaciones por Enviar")
@@ -624,46 +738,52 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
   };
 
   // Generar texto para WhatsApp con enlace dinámico
-  const generateWhatsAppMessage = () => {
-    const itemsList = quote.scopeItems
+  const generateWhatsAppMessage = (quoteOverride?: JobQuote) => {
+    const q = quoteOverride || quote;
+    const itemsList = q.scopeItems
       .filter((i) => i.text.trim())
       .map((i, idx) => `  ${idx + 1}. ${i.text}`)
       .join('\n');
 
-    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://destaqueosmarin.pages.dev'}/cotizacion/${quote.id}`;
+    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://destaqueosmarin.pages.dev'}/cotizacion/${q.id}`;
+    const laborVal = Number(q.laborCost) || 0;
+    const matVal = Number(q.materialsCost) || 0;
+    const sub = laborVal + matVal;
+    const iva = q.applyIVA ? Math.round(sub * (q.ivaRate || 0.13)) : 0;
+    const tot = sub + iva;
 
-    const msg = `Hola *${quote.clientName || 'Cliente'}*, le saluda el técnico de *Destaqueos y Tanques Sépticos Mauricio Marín* 🚛.
+    const msg = `Hola *${q.clientName || 'Cliente'}*, le saluda el técnico de *Destaqueos y Tanques Sépticos Mauricio Marín* 🚛.
 
-Ya realicé su cotización oficial para *${quote.workReference || 'el servicio solicitado'}*.
+Ya realicé su cotización oficial para *${q.workReference || 'el servicio solicitado'}*.
 
-📋 *COTIZACIÓN OFICIAL — ${quote.companyName.toUpperCase()}*
-*N° de Control:* ${quote.quoteNumber}
-*Fecha de Emisión:* ${quote.date}
-*Cliente / Lugar:* ${quote.clientName || 'Cliente Particular'} ${quote.clientLocation ? `(${quote.clientLocation})` : ''}
+📋 *COTIZACIÓN OFICIAL — ${q.companyName.toUpperCase()}*
+*N° de Control:* ${q.quoteNumber}
+*Fecha de Emisión:* ${q.date}
+*Cliente / Lugar:* ${q.clientName || 'Cliente Particular'} ${q.clientLocation ? `(${q.clientLocation})` : ''}
 
 🛠️ *Referencia del Trabajo:*
-${quote.workReference || 'Trabajo Técnico Especializado'}
+${q.workReference || 'Trabajo Técnico Especializado'}
 
 📝 *Alcance de Trabajos a Realizar:*
 ${itemsList || '  • Trabajos técnicos especializados de acuerdo a inspección.'}
 
 💰 *Desglose Económico:*
-• Mano de Obra: ₡${labor.toLocaleString('es-CR')}
-• Estimado de Materiales: ₡${materials.toLocaleString('es-CR')}
-• Subtotal: ₡${subtotal.toLocaleString('es-CR')}
-${quote.applyIVA ? `• IVA (13% Factura Electrónica): ₡${ivaAmount.toLocaleString('es-CR')}\n` : ''}*TOTAL GENERAL:* ₡${totalGeneral.toLocaleString('es-CR')}
+• Mano de Obra: ₡${laborVal.toLocaleString('es-CR')}
+• Estimado de Materiales: ₡${matVal.toLocaleString('es-CR')}
+• Subtotal: ₡${sub.toLocaleString('es-CR')}
+${q.applyIVA ? `• IVA (13% Factura Electrónica): ₡${iva.toLocaleString('es-CR')}\n` : ''}*TOTAL GENERAL:* ₡${tot.toLocaleString('es-CR')}
 
-⏱️ *Tiempo Estimado de Entrega:* ${quote.deliveryTime}
-✅ *Condiciones:* ${quote.paymentTerms}
+⏱️ *Tiempo Estimado de Entrega:* ${q.deliveryTime}
+✅ *Condiciones:* ${q.paymentTerms}
 🛡️ *Garantía:* 100% satisfacción y servicio profesional garantizado.
 
 🌐 *Ver y Descargar Cotización Oficial en Línea:*
 👉 ${shareUrl}
 
-👤 *Atendido por:* ${quote.responsibleName} (${quote.responsibleTitle})
-📞 *Teléfono:* ${quote.responsiblePhone}
+👤 *Atendido por:* ${q.responsibleName} (${q.responsibleTitle})
+📞 *Teléfono:* ${q.responsiblePhone}
 📸 *Instagram:* ${SOCIAL_URLS.instagram}
-🌐 *Web:* ${quote.websiteUrl}
+🌐 *Web:* ${q.websiteUrl}
 
 _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépticos Mauricio Marín._`;
 
@@ -979,20 +1099,36 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
             </button>
           </div>
 
-          {/* BOTÓN MANDATORIO: Guardar Cotización para Enviar Después */}
+          {/* BOTÓN 1: Guardar y Enviar */}
+          <button
+            type="button"
+            onClick={handleSaveAndSendQuote}
+            disabled={isSavingLater || isSyncing || redirectCountdown !== null}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-sm transition-all active:scale-95 cursor-pointer"
+            title="Guardar cotización y abrir WhatsApp con la cotización en 3 segundos"
+          >
+            {isSavingLater ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            <span>Guardar y enviar</span>
+          </button>
+
+          {/* BOTÓN 2: Solo Guardar */}
           <button
             type="button"
             onClick={() => handleSaveQuoteForLater(false)}
-            disabled={isSavingLater || isSyncing}
+            disabled={isSavingLater || isSyncing || redirectCountdown !== null}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="Guardar cotización en 'Cotizaciones por Enviar' para enviarla luego al cliente"
+            title="Guardar en Cotizaciones por Enviar para mandarla después"
           >
             {isSavingLater ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
             ) : (
               <BookmarkPlus className="w-4 h-4" />
             )}
-            <span>{isSavingLater ? 'Guardando...' : 'Guardar Cotización'}</span>
+            <span>Solo guardar</span>
           </button>
 
           {/* BOTÓN: Cotizaciones por Enviar (con contador de pendientes) */}
@@ -2223,33 +2359,47 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => handleSaveQuoteForLater(true)}
-              disabled={isSavingLater || isSyncing}
-              className={`w-full py-3 px-4 rounded-2xl text-xs font-black shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                savedLaterFeedback
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-300'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-white'
-              }`}
-            >
-              {isSavingLater ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Guardando en Cotizaciones por Enviar...</span>
-                </>
-              ) : savedLaterFeedback ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>✅ ¡Guardada en Cotizaciones por Enviar!</span>
-                </>
-              ) : (
-                <>
-                  <BookmarkPlus className="w-4 h-4" />
-                  <span>Guardar en Cotizaciones por Enviar</span>
-                </>
-              )}
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {/* Botón 1: Guardar y enviar */}
+              <button
+                type="button"
+                onClick={handleSaveAndSendQuote}
+                disabled={isSavingLater || isSyncing || redirectCountdown !== null}
+                className="w-full py-3 px-4 rounded-2xl text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-emerald-600 via-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white active:scale-98"
+              >
+                {isSavingLater ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Guardando y preparando WhatsApp...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Guardar y enviar</span>
+                  </>
+                )}
+              </button>
+
+              {/* Botón 2: Solo guardar */}
+              <button
+                type="button"
+                onClick={() => handleSaveQuoteForLater(true)}
+                disabled={isSavingLater || isSyncing || redirectCountdown !== null}
+                className="w-full py-3 px-4 rounded-2xl text-xs font-black shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white active:scale-98"
+              >
+                {isSavingLater ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus className="w-4 h-4" />
+                    <span>Solo guardar</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
         </div>
@@ -2584,6 +2734,53 @@ _Esta cotización fue generada de manera digital por Destaqueos y Tanques Sépti
         </div>
 
       </div>
+
+      {/* MODAL DE CUENTA REGRESIVA DE 3 SEGUNDOS PARA GUARDAR Y ENVIAR */}
+      {redirectCountdown !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-4 border-2 border-emerald-500 animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl font-black">
+              ✓
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-slate-900">¡Cotización Guardada Correctamente!</h3>
+              <p className="text-xs sm:text-sm font-semibold text-slate-600">
+                Redirigiendo a WhatsApp en{' '}
+                <span className="text-emerald-600 font-black text-xl animate-pulse">
+                  {redirectCountdown}
+                </span>{' '}
+                segundos...
+              </p>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-emerald-500 h-full transition-all duration-1000 ease-linear rounded-full"
+                style={{ width: `${((4 - redirectCountdown) / 3) * 100}%` }}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+              <button
+                type="button"
+                onClick={handleOpenWhatsAppImmediately}
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-black text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <MessageSquare className="w-4 h-4 fill-white" />
+                <span>Abrir WhatsApp Ahora</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (redirectTimerRef.current) clearInterval(redirectTimerRef.current);
+                  setRedirectCountdown(null);
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

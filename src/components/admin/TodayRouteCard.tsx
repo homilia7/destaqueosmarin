@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigation, Phone, MessageSquare, CheckCircle, MapPin, ChevronDown, ChevronUp, Image as ImageIcon, Clock, Edit3, FastForward, DollarSign, Star, Calendar, FileText } from 'lucide-react';
-import { Appointment, AppointmentStatus, PaymentMethod } from '../../types/appointment';
+import { Appointment, AppointmentStatus, PaymentMethod, PaymentItem } from '../../types/appointment';
 import { SavedQuoteEntry } from '../../types/quote';
 import { formatTime12h, formatDateToSpanish } from '../../utils/dateFormatter';
 import { ServiceEditorModal } from './ServiceEditorModal';
@@ -13,7 +13,7 @@ interface TodayRouteCardProps {
   onUpdateStatus: (id: string, status: AppointmentStatus) => void;
   onOpenLightbox: (photos: string[], index: number) => void;
   onUpdateService?: (id: string, newServiceType: string) => Promise<void>;
-  onUpdatePayment?: (id: string, amount: number, method: PaymentMethod) => Promise<void>;
+  onUpdatePayment?: (id: string, amount: number, method: PaymentMethod, breakdown?: PaymentItem[]) => Promise<void>;
   isHighlighted?: boolean;
   existingQuote?: SavedQuoteEntry | null;
   onCreateQuote?: (appointment: Appointment) => void;
@@ -85,6 +85,11 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleFinishJob = () => {
+    onUpdateStatus(appointment.id, 'completed');
+    setIsPaymentOpen(true);
+  };
+
   const isCompleted = appointment.status === 'completed';
 
   return (
@@ -146,21 +151,31 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
         </div>
 
         {/* Estado y Monto del Cobro */}
-        <div className="pt-0.5">
+        <div className="pt-0.5 space-y-1.5">
           {Number(appointment.amount_collected || 0) > 0 ? (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-black text-emerald-800">
-              <span>₡{Number(appointment.amount_collected).toLocaleString('es-CR')}</span>
-              <span className="text-[10px] text-emerald-600 font-bold uppercase">
-                ({appointment.payment_method === 'card' ? 'Tarjeta' : (appointment.payment_method === 'cash' ? 'Efectivo' : 'Sinpe Móvil')})
-              </span>
-              {onUpdatePayment && (
-                <button
-                  type="button"
-                  onClick={() => setIsPaymentOpen(true)}
-                  className="ml-1 text-[10px] text-emerald-700 underline font-bold hover:text-emerald-900"
-                >
-                  Cambiar
-                </button>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-black text-emerald-800">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Cobrado: ₡{Number(appointment.amount_collected).toLocaleString('es-CR')}</span>
+                {onUpdatePayment && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPaymentOpen(true)}
+                    className="ml-1 text-[10px] text-emerald-700 underline font-bold hover:text-emerald-900 cursor-pointer"
+                  >
+                    Cambiar
+                  </button>
+                )}
+              </div>
+              {Array.isArray(appointment.payment_breakdown) && appointment.payment_breakdown.length > 0 && (
+                appointment.payment_breakdown.map((item, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 text-[10px] font-bold text-slate-700 border border-slate-200">
+                    <span>
+                      {item.method === 'cash' ? '💵 Efectivo' : item.method === 'sinpe' ? '📱 SINPE' : item.method === 'transfer' ? '🏦 Transf.' : '💳 Tarjeta'}:
+                    </span>
+                    <span className="font-extrabold text-slate-900">₡{Number(item.amount).toLocaleString('es-CR')}</span>
+                  </span>
+                ))
               )}
             </div>
           ) : (
@@ -168,9 +183,10 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsPaymentOpen(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-black bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-all cursor-pointer"
               >
-                <span>₡ Registrar Cobro (Sinpe / Tarjeta)</span>
+                <DollarSign className="w-3 h-3 text-amber-600" />
+                <span>₡ Registrar Cobro (SINPE / Efectivo / Transf.)</span>
               </button>
             )
           )}
@@ -226,16 +242,32 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
           </button>
         )}
 
-        {/* Botón Finalizar */}
-        {!isCompleted && (
+        {/* Botón Finalizar / Etiqueta de Finalizado */}
+        {!isCompleted ? (
           <button
             type="button"
-            onClick={() => onUpdateStatus(appointment.id, 'completed')}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-md shadow-orange-500/25 active:scale-98 transition-all cursor-pointer"
+            onClick={handleFinishJob}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-md shadow-orange-500/25 active:scale-98 transition-all cursor-pointer"
           >
             <CheckCircle className="w-4 h-4 text-white" />
             <span>Marcar Trabajo como Finalizado</span>
           </button>
+        ) : (
+          <div className="w-full flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500 text-emerald-800">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span className="text-xs sm:text-sm font-black uppercase tracking-wide">✓ TRABAJO FINALIZADO</span>
+            </div>
+            {Number(appointment.amount_collected || 0) === 0 && onUpdatePayment && (
+              <button
+                type="button"
+                onClick={() => setIsPaymentOpen(true)}
+                className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                Ingresar Cobro
+              </button>
+            )}
+          </div>
         )}
 
         {/* El botón Compartir Cotización Oficial solo debe aparecer a las cotizaciones que crea el admin */}
@@ -357,8 +389,9 @@ export const TodayRouteCard: React.FC<TodayRouteCardProps> = ({
           serviceType={appointment.service_type}
           currentAmount={appointment.amount_collected}
           currentMethod={appointment.payment_method}
-          onSavePayment={async (id, amt, mtd) => {
-            if (onUpdatePayment) await onUpdatePayment(id, amt, mtd);
+          currentBreakdown={appointment.payment_breakdown}
+          onSavePayment={async (id, amt, mtd, breakdown) => {
+            if (onUpdatePayment) await onUpdatePayment(id, amt, mtd as PaymentMethod, breakdown);
           }}
         />
       )}

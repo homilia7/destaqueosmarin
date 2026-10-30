@@ -44,11 +44,25 @@ CREATE TABLE IF NOT EXISTS appointments (
   status TEXT NOT NULL DEFAULT 'pending',
   amount_collected REAL NOT NULL DEFAULT 0,
   payment_method TEXT NOT NULL DEFAULT 'pendiente',
+  payment_breakdown_json TEXT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments (appointment_date);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments (status);
+
+-- 3.1 Gastos Operativos (Gasolina, Alimentación, etc.)
+CREATE TABLE IF NOT EXISTS expenses (
+  id TEXT PRIMARY KEY,
+  date TEXT NOT NULL,
+  category TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount REAL NOT NULL,
+  receipt_url TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses (date);
 
 -- 4. Catálogo de Servicios
 CREATE TABLE IF NOT EXISTS services (

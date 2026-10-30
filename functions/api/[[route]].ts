@@ -286,6 +286,7 @@ app.get('/appointments', async (c) => {
         ...r,
         amount_collected: Number(r.amount_collected || 0),
         payment_method: r.payment_method || 'sinpe',
+        payment_breakdown: r.payment_breakdown_json ? (() => { try { return JSON.parse(r.payment_breakdown_json); } catch { return []; } })() : [],
         photo_keys: r.photo_keys_json ? JSON.parse(r.photo_keys_json) : []
       }));
       return c.json(list || []);
@@ -433,6 +434,13 @@ app.patch('/appointments/:id', async (c) => {
       if (body.payment_method) {
         await c.env.DB.prepare('UPDATE appointments SET payment_method = ? WHERE id = ?')
           .bind(body.payment_method, id).run();
+      }
+      if (body.payment_breakdown !== undefined || body.payment_breakdown_json !== undefined) {
+        const pb = body.payment_breakdown !== undefined 
+          ? (typeof body.payment_breakdown === 'string' ? body.payment_breakdown : JSON.stringify(body.payment_breakdown || []))
+          : body.payment_breakdown_json;
+        await c.env.DB.prepare('UPDATE appointments SET payment_breakdown_json = ? WHERE id = ?')
+          .bind(pb, id).run();
       }
 
       const updated = await c.env.DB.prepare('SELECT * FROM appointments WHERE id = ?').bind(id).first<any>();
@@ -777,6 +785,9 @@ app.delete('/reviews/:id', async (c) => {
 // RUTAS DE COTIZACIONES DINÁMICAS (QUOTES)
 // ----------------------------------------------------
 app.get('/quotes', async (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
   if (c.env.DB) {
     try {
       const { results } = await c.env.DB.prepare(
@@ -928,6 +939,64 @@ app.delete('/quotes/:id', async (c) => {
     }
   }
   return c.json({ success: true, id });
+});
+
+// ----------------------------------------------------
+// RUTAS DE GASTOS OPERATIVOS Y COMPROBANTES (EXPENSES)
+// ----------------------------------------------------
+app.get('/expenses', async (c) => {
+  if (c.env.DB) {
+    try {
+      const { results } = await c.env.DB.prepare(
+        'SELECT * FROM expenses ORDER BY date DESC, created_at DESC'
+      ).all();
+      return c.json(results || []);
+    } catch (e) {
+      console.warn('D1 get expenses error:', e);
+    }
+  }
+  return c.json([]);
+});
+
+app.post('/expenses', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const id = body.id || 'exp_' + crypto.randomUUID().substring(0, 10);
+  const date = body.date || new Date().toISOString().split('T')[0];
+  const category = body.category || 'otro';
+  const description = (body.description || '').trim();
+  const amount = Number(body.amount || 0);
+  const receiptUrl = body.receipt_url || body.receiptUrl || null;
+
+  if (c.env.DB) {
+    try {
+      await c.env.DB.prepare(`
+        INSERT INTO expenses (id, date, category, description, amount, receipt_url)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          date = excluded.date,
+          category = excluded.category,
+          description = excluded.description,
+          amount = excluded.amount,
+          receipt_url = excluded.receipt_url
+      `).bind(id, date, category, description, amount, receiptUrl).run();
+    } catch (e) {
+      console.warn('D1 insert/update expense error:', e);
+    }
+  }
+
+  return c.json({ id, date, category, description, amount, receipt_url: receiptUrl, success: true });
+});
+
+app.delete('/expenses/:id', async (c) => {
+  const id = c.req.param('id');
+  if (c.env.DB) {
+    try {
+      await c.env.DB.prepare('DELETE FROM expenses WHERE id = ?').bind(id).run();
+    } catch (e) {
+      console.warn('D1 delete expense error:', e);
+    }
+  }
+  return c.json({ id, success: true });
 });
 
 // 12. RASTREADOR DE TRÁFICO Y EMBUDO DE CONVERSIÓN (FB, IG, WA, DIRECT)

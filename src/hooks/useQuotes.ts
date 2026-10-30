@@ -84,15 +84,15 @@ export function useQuotes(isPollingActive = true) {
           }
         }));
 
-        setQuotes((prev) => {
-          const remoteIds = new Set(mapped.map((m) => m.id));
-          const localOnly = prev.filter((p) => !remoteIds.has(p.id));
-          const merged = [...mapped, ...localOnly];
-          try {
-            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(merged));
-          } catch (e) {}
-          return merged;
-        });
+        setQuotes(mapped);
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(mapped));
+        } catch (e) {}
+      } else if (Array.isArray(remote) && remote.length === 0) {
+        setQuotes([]);
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([]));
+        } catch (e) {}
       }
     } catch (err) {
       console.warn('Error fetching quotes in useQuotes:', err);

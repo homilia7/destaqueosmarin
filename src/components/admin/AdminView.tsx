@@ -10,6 +10,7 @@ import { FinancialReportCard } from './FinancialReportCard';
 import { AdminReviewsCard } from './AdminReviewsCard';
 import { JobQuoteManager } from '../quotes/JobQuoteManager';
 import { TrafficAnalytics } from './TrafficAnalytics';
+import { IncomeExpenseManager } from './IncomeExpenseManager';
 import { AnimatedEagleLogo } from '../common/AnimatedEagleLogo';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useReviews } from '../../hooks/useReviews';
@@ -25,7 +26,7 @@ import {
   formatDateToSpanish, 
   formatTime12h 
 } from '../../utils/dateFormatter';
-import { Bell, RefreshCw, X, Navigation, Star, Calendar, Clock, Settings, FileText, BarChart3, Eye, Plus, CheckCircle2, AlertCircle, ChevronDown, Menu } from 'lucide-react';
+import { Bell, RefreshCw, X, Navigation, Star, Calendar, Clock, Settings, FileText, BarChart3, Eye, Plus, CheckCircle2, AlertCircle, ChevronDown, Menu, Wallet } from 'lucide-react';
 
 interface AdminViewProps {
   onClose: () => void;
@@ -36,7 +37,7 @@ interface AdminViewProps {
   notificationsGranted?: boolean;
 }
 
-const VALID_ADMIN_TABS: AdminTab[] = ['route', 'all', 'quotes', 'traffic', 'schedule', 'settings', 'reviews'];
+const VALID_ADMIN_TABS: AdminTab[] = ['route', 'all', 'income', 'quotes', 'traffic', 'schedule', 'settings', 'reviews'];
 
 const getInitialAdminTab = (): AdminTab => {
   if (typeof window !== 'undefined') {
@@ -352,6 +353,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <span className="capitalize">{
                 activeTab === 'route' ? 'Ruta de Hoy' :
                 activeTab === 'all' ? 'Todas las Citas' :
+                activeTab === 'income' ? 'Control de Ingresos' :
                 activeTab === 'traffic' ? 'Tráfico & Métricas' :
                 activeTab === 'quotes' ? 'Cotizador' :
                 activeTab === 'schedule' ? 'Horarios' :
@@ -366,6 +368,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 {[
                   { id: 'route' as AdminTab, label: 'Ruta de Hoy', icon: Navigation, count: todayAppointments.length },
                   { id: 'all' as AdminTab, label: 'Todas las Citas', icon: Calendar, count: pendingAppointments.length },
+                  { id: 'income' as AdminTab, label: 'Control de Ingresos', icon: Wallet, count: 0 },
                   { id: 'traffic' as AdminTab, label: 'Tráfico & Métricas', icon: BarChart3, count: 0 },
                   { id: 'quotes' as AdminTab, label: 'Cotizador Formal', icon: FileText, count: 0 },
                   { id: 'schedule' as AdminTab, label: 'Horarios & Disponibilidad', icon: Clock, count: 0 },
@@ -408,7 +411,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
           {[
             { id: 'route' as AdminTab, label: 'Ruta de Hoy', icon: Navigation, count: todayAppointments.length },
             { id: 'all' as AdminTab, label: 'Todas las Citas', icon: Calendar, count: pendingAppointments.length },
-            { id: 'traffic' as AdminTab, label: 'Tráfico & Métricas', icon: BarChart3, count: 0 },
+            { id: 'income' as AdminTab, label: 'Ingresos', icon: Wallet, count: 0 },
+            { id: 'traffic' as AdminTab, label: 'Tráfico', icon: BarChart3, count: 0 },
             { id: 'quotes' as AdminTab, label: 'Cotizador', icon: FileText, count: 0 },
             { id: 'schedule' as AdminTab, label: 'Horarios', icon: Clock, count: 0 },
             { id: 'settings' as AdminTab, label: 'Ajustes', icon: Settings, count: 0 }
@@ -945,6 +949,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB CONTROL DE INGRESOS Y GASTOS */}
+        {activeTab === 'income' && (
+          <div className="w-full">
+            <IncomeExpenseManager appointments={appointments} />
           </div>
         )}
 

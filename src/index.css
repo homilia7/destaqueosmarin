@@ -88,6 +88,36 @@
   animation: eagleBorderAura 4s ease-in-out infinite;
 }
 
+/* Ráfaga de luz multicolor que cruza las letras de lado a lado y reposa en gris (Animación Copyright GeoSoft de Bosuni) */
+@keyframes textLightSweep {
+  0% {
+    background-position: 250% 0;
+  }
+  45%, 100% {
+    background-position: -150% 0;
+  }
+}
+
+.animate-copyright-sweep {
+  background: linear-gradient(
+    90deg,
+    #64748B 0%,
+    #64748B 25%,
+    #D97706 38%,
+    #059669 46%,
+    #2563EB 54%,
+    #9333EA 62%,
+    #EC4899 70%,
+    #64748B 80%,
+    #64748B 100%
+  );
+  background-size: 320% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: textLightSweep 4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
 /* Reglas de Impresión Quirúrgica para la Hoja de Cotización Oficial (1 Sola Hoja Garantizada) */
 @media print {
   @page {

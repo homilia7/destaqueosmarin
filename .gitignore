@@ -28,4 +28,5 @@ CLAVES.txt
 *.env
 *.env.*
 *.tsbuildinfo
+.wrangler
 

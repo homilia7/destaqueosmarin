@@ -24,7 +24,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   const timeRange = `${formatTime12h(appointment.start_time)} - ${formatTime12h(appointment.end_time)}`;
 
   const whatsappMessage = encodeURIComponent(
-    `¡Hola Legacy Detección de Fugas! Acabo de agendar una inspección:\n\n` +
+    `¡Hola Destaqueos y Tanques Sépticos Mauricio Marín! Acabo de agendar un servicio:\n\n` +
     `• Nombre: ${appointment.client_name}\n` +
     `• Servicio: ${appointment.service_type}\n` +
     `• Fecha: ${formatDateToSpanish(appointment.appointment_date)}\n` +

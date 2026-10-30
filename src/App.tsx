@@ -16,6 +16,7 @@ import { useAdminAuth } from './hooks/useAdminAuth';
 import { usePWA } from './hooks/usePWA';
 import { ServiceType } from './types/appointment';
 import { api } from './services/api';
+import { MessageSquare } from 'lucide-react';
 
 export function App() {
   const [currentPath, setCurrentPath] = useState(() => {
@@ -23,7 +24,7 @@ export function App() {
     return path || '/';
   });
 
-  const [selectedService, setSelectedService] = useState<ServiceType>('Detección Especializada de Fugas');
+  const [selectedService, setSelectedService] = useState<ServiceType>('Limpieza de Tanques Sépticos');
   
   const { isAuthenticated, isLoading, error, login, logout } = useAdminAuth();
   const { isInstallable, notificationsGranted, promptInstall, requestNotificationPermission } = usePWA();
@@ -279,6 +280,21 @@ export function App() {
             onNavigateTestimonials={() => navigateTo('/testimonios')}
           />
         </>
+      )}
+
+      {/* Botón Flotante Directo de WhatsApp Mauricio Marín */}
+      {!isAdminRoute && (
+        <a
+          href="https://wa.me/50661141421?text=Hola%20Mauricio%20Mar%C3%ADn%2C%20quisiera%20consultar%20por%20un%20servicio%20de%20destaqueo%20o%20tanque%20s%C3%A9ptico"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WhatsApp Mauricio Marín 6114-1421"
+          className="fixed bottom-5 right-5 z-40 bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-emerald-500/25 border border-white/20"
+          title="Escribir directo a Mauricio Marín por WhatsApp"
+        >
+          <MessageSquare className="w-5 h-5 fill-white shrink-0" />
+          <span className="text-xs font-black hidden sm:inline">WhatsApp 6114-1421</span>
+        </a>
       )}
     </div>
   );

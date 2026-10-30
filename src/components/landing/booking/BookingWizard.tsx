@@ -12,7 +12,7 @@ interface BookingWizardProps {
 }
 
 export const BookingWizard: React.FC<BookingWizardProps> = ({
-  initialService = 'Detección Especializada de Fugas'
+  initialService = 'Limpieza de Tanques Sépticos'
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedDate, setSelectedDate] = useState('');
@@ -94,7 +94,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
       client_address: '',
       latitude: null,
       longitude: null,
-      service_type: 'Detección Especializada de Fugas',
+      service_type: 'Limpieza de Tanques Sépticos',
       problem_description: ''
     });
     setPhotos([]);

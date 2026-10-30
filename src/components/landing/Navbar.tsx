@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, onNavigateAgenda, o
                 e.preventDefault();
                 onNavigateAgenda();
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white bg-brand-orange hover:bg-brand-orangeHover shadow-glow-orange hover:shadow-md transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-md shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Agendar Cita</span>
@@ -177,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, onNavigateAgenda, o
                 setMobileMenuOpen(false);
                 onNavigateAgenda();
               }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold bg-brand-orange text-white shadow-glow-orange cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-md shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
             >
               <Calendar className="w-4 h-4" />
               <span>Agendar Inspección Ahora</span>

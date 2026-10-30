@@ -197,50 +197,49 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
           })}
         </div>
 
-        {/* Banner de Evidencia Real: Ubicación Exacta Antes y Después */}
-        <div className="mt-14 bg-gradient-to-r from-brand-dark to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-card border border-slate-800">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-6 rounded-2xl overflow-hidden shadow-lg border border-white/10 bg-black">
-              <img
-                src="/images/caso-punto-exacto.png"
-                alt="Caso real: Ubicamos el punto exacto Antes y Después de reparación de tubería"
-                className="w-full h-auto max-h-80 sm:max-h-96 object-contain bg-slate-950 mx-auto"
-              />
+        {/* Banner de Evidencia Real: Ubicación Exacta y Cero Daños (Color Clarito y sin la foto eliminada) */}
+        <div className="mt-14 bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-slate-50 rounded-3xl p-6 sm:p-10 text-slate-800 shadow-soft border-2 border-emerald-200/90">
+          <div className="max-w-3xl mx-auto text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+              <span>Garantía de Cero Daño Innecesario a Pisos</span>
             </div>
-            <div className="lg:col-span-6 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-extrabold bg-brand-orange/20 text-brand-orange border border-brand-orange/30">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Garantía de Cero Daño Innecesario</span>
+            
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+              UBICAMOS EL PUNTO EXACTO DE LA FUGA Y OBSTRUCCIÓN
+            </h3>
+
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium max-w-2xl mx-auto">
+              Detectamos el origen del problema y la obstrucción con precisión técnica antes de intervenir. Evitamos romper pisos de porcelanato, losas o jardines enteros, trabajando únicamente donde se requiere la solución.
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm font-bold text-slate-700">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Sin rupturas a ciegas</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                UBICAMOS EL PUNTO EXACTO DE LA FUGA
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Detectamos el origen subterráneo u oculto con precisión milimétrica antes de intervenir. Evitamos romper pisos, losas o jardines enteros, excavando únicamente donde se requiere la reparación.
-              </p>
-              <div className="pt-2 flex flex-col sm:flex-row gap-3 text-xs font-semibold text-slate-300">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Sin rupturas a ciegas</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Ahorro sustancial en acabados</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Ahorro sustancial en acabados</span>
               </div>
-              <div className="pt-2">
-                <a
-                  href="/agenda"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onSelectService('Detección Especializada de Fugas');
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-extrabold text-white bg-brand-orange hover:bg-orange-600 transition-all shadow-glow-orange cursor-pointer"
-                >
-                  <span>Agendar Localización de Fuga</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Camión cisterna y sondas Ridge</span>
               </div>
+            </div>
+
+            <div className="pt-4 flex justify-center">
+              <a
+                href="/agenda"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectService('Destaqueo de Tuberías y Drenajes');
+                }}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-[#FF5E0E] via-[#FF6D14] to-[#FF851A] hover:from-[#E65100] hover:to-[#FF6D14] shadow-lg shadow-orange-500/30 hover:shadow-orange-500/45 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
+              >
+                <span>Agendar Inspección y Destaqueo</span>
+                <ArrowRight className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>

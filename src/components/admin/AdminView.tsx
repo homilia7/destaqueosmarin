@@ -26,7 +26,7 @@ import {
   formatDateToSpanish, 
   formatTime12h 
 } from '../../utils/dateFormatter';
-import { Bell, RefreshCw, X, Navigation, Star, Calendar, Clock, Settings, FileText, BarChart3, Eye, Plus, CheckCircle2, AlertCircle, ChevronDown, Menu, Wallet } from 'lucide-react';
+import { Bell, RefreshCw, X, Navigation, Star, Calendar, Clock, Settings, FileText, BarChart3, Eye, Plus, CheckCircle2, AlertCircle, ChevronDown, Menu, Wallet, LogOut } from 'lucide-react';
 
 interface AdminViewProps {
   onClose: () => void;
@@ -401,6 +401,18 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     </button>
                   );
                 })}
+                <div className="border-t border-slate-800 my-1"></div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onLogout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-bold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span>Cerrar Sesión</span>
+                </button>
               </div>
             )}
           </div>
@@ -469,11 +481,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <button
             type="button"
             onClick={onClose}
-            title="Salir"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-red-900/60 transition-colors duration-150 shrink-0 cursor-pointer"
+            title="Ver sitio web principal sin cerrar sesión"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors duration-150 shrink-0 cursor-pointer"
           >
-            <X className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-bold">Cerrar</span>
+            <Eye className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-xs font-bold">Ver Web</span>
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            title="Cerrar sesión completamente y proteger el panel"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-600/90 text-white hover:bg-red-600 transition-colors duration-150 shrink-0 cursor-pointer shadow-xs"
+          >
+            <LogOut className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-xs font-bold">Cerrar Sesión</span>
           </button>
         </div>
       </header>

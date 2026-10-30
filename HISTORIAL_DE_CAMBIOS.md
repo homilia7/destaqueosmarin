@@ -79,6 +79,9 @@ Este documento es la **Memoria Protegida** del proyecto. Todas las funcionalidad
      - Eliminación de desfases entre dispositivos: encabezados HTTP `Cache-Control: no-store, no-cache` y timestamp dinámico (`?_t=Date.now()`) en consultas de cotizaciones e ingresos.
      - Generación de identificador único por cotización (`COT-YYMMDD-HHMMSS-RAND`) para evitar colisiones o sobreescritura de cotizaciones pendientes.
      - Persistencia y migración en base de datos Cloudflare D1 (tabla `expenses`, campo `payment_breakdown_json` en `appointments`).
+  5. **Cierre de Sesión Real y Protección del Candadito (`AdminView.tsx`):**
+     - Sustitución del botón ambiguo "Cerrar" (que solo navegaba a la portada dejando la sesión abierta) por dos acciones directas: "Ver Web" (para visitar la tienda pública sin desloguearse) y "Cerrar Sesión" (destrucción atómica de tokens en `localStorage` y `sessionStorage`).
+     - Al cerrar sesión, el botón del candadito (`<Lock />`) del menú principal queda inmediatamente bloqueado y exige obligatoriamente usuario y contraseña/PIN en cualquier recarga o nuevo acceso.
 
 
 

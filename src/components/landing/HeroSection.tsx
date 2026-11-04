@@ -30,19 +30,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigateAgenda }) =>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5.5xl font-extrabold text-brand-dark tracking-tight leading-[1.14]">
               <span className="relative inline-block mr-2 sm:mr-3">
                 <span className="bg-gradient-to-r from-emerald-800 via-teal-500 via-emerald-400 to-emerald-700 bg-[length:200%_auto] animate-shimmer-fast bg-clip-text text-transparent drop-shadow-[0_4px_25px_rgba(16,185,129,0.35)]">
-                  DESTAQUEOS Y TANQUES
-                </span>
-              </span>
-              <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-teal-700 via-emerald-500 via-teal-400 to-emerald-700 bg-[length:200%_auto] animate-shimmer-fast bg-clip-text text-transparent">
-                  SÉPTICOS MARÍN
+                  Destaqueos de tuberías
                 </span>
               </span>{' '}
               <br className="hidden sm:inline" />
-              <span className="text-emerald-700 underline decoration-amber-500/40 decoration-wavy">
-                SIN ROMPER
-              </span>{' '}
-              TUS PISOS
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-teal-700 via-emerald-500 via-teal-400 to-emerald-700 bg-[length:200%_auto] animate-shimmer-fast bg-clip-text text-transparent">
+                  y limpieza de tanques sépticos
+                </span>
+              </span>
             </h1>
 
             {/* Subtítulo Persuasivo */}

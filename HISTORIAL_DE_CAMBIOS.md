@@ -82,6 +82,8 @@ Este documento es la **Memoria Protegida** del proyecto. Todas las funcionalidad
   5. **Cierre de Sesión Real y Protección del Candadito (`AdminView.tsx`):**
      - Sustitución del botón ambiguo "Cerrar" (que solo navegaba a la portada dejando la sesión abierta) por dos acciones directas: "Ver Web" (para visitar la tienda pública sin desloguearse) y "Cerrar Sesión" (destrucción atómica de tokens en `localStorage` y `sessionStorage`).
      - Al cerrar sesión, el botón del candadito (`<Lock />`) del menú principal queda inmediatamente bloqueado y exige obligatoriamente usuario y contraseña/PIN en cualquier recarga o nuevo acceso.
+  6. **Actualización de Titular Principal Hero (`HeroSection.tsx`):**
+     - Actualizado el encabezado principal H1 para mostrar exactamente *"Destaqueos de tuberías y limpieza de tanques sépticos"*, conservando el efecto visual animado de brillo shimmer esmeralda.
 
 
 

@@ -6,7 +6,7 @@ Este documento es la **Memoria Protegida** del proyecto. Todas las funcionalidad
 - **Repositorio GitHub:** https://github.com/homilia7/destaqueosmarin
 - **Rama:** main
 - **URL Producción:** https://destaqueosmarin.pages.dev
-- **Commit:** 074311b
+- **Commit:** ff40d03
 
 ---
 
